@@ -21,8 +21,8 @@ def visualization_block(time_series, linewidth=10, output_shape=(28,28)):
 
 if __name__ == '__main__':
 
-	matlab_data = loadmat('0cm.mat')['data_8p_0cm'].T
-	plt.imshow(visualization_block(data[10]))
+	x = loadmat('data/ook_10p_0cm.mat')['data_10p_0cm'].T
+	plt.imshow(visualization_block(x[1]))
 	plt.show()
 
 

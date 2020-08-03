@@ -6,8 +6,10 @@ from sklearn.utils.multiclass import unique_labels
 from scipy.io import loadmat
 
 from visualization_block import visualization_block 
-from models import cnn
 
+from keras.models import Sequential
+from keras.layers import Input, Dropout, Flatten, Conv2D, MaxPooling2D, Dense, Activation, Reshape
+from keras.optimizers import RMSprop
 from keras.callbacks import ModelCheckpoint, Callback, EarlyStopping
 from keras.utils.np_utils import to_categorical
 from keras.utils import Sequence
@@ -31,6 +33,20 @@ class ImageGenerator(Sequence):
         y = [r for r in batch_y]
         return np.array(x), np.array(y)
 
+# CNN Model
+def cnn(classes, optimizer=RMSprop(lr=1e-4), objective = 'binary_crossentropy'):
+    model = Sequential()
+    model.add(Reshape((28, 28, 1), input_shape=((28, 28))))
+    model.add(Conv2D(filters=6, kernel_size=(5, 5), padding='valid'))
+    model.add(MaxPooling2D(data_format="channels_last", pool_size=(2, 2)))
+    model.add(Conv2D(filters=12, kernel_size=(3, 3), padding='valid'))
+    model.add(MaxPooling2D(data_format="channels_last", pool_size=(2, 2)))
+    model.add(Flatten())
+    model.add(Dense(classes))
+    model.add(Activation('sigmoid'))
+    model.compile(loss=objective, optimizer=optimizer, metrics=['accuracy'])
+    return model
+
 # Callback for loss logging per epoch
 class LossHistory(Callback):
     def on_train_begin(self, logs={}):
@@ -46,8 +62,8 @@ class LossHistory(Callback):
         self.val_acc.append(logs.get('val_acc'))
 
 # Prepare Data
-x = loadmat('0cm.mat')['data_8p_0cm'].T
-y = loadmat('label.mat')['org_label'][0]
+x = loadmat('data/ook_10p_0cm.mat')['data_10p_0cm'].T
+y = loadmat('data/ook_10p_label.mat')['org_label'][0]
 classes = len(unique_labels(y))
 print("Original Data: {}".format(x.shape))
 print("Original Labels: {}".format(y.shape))
