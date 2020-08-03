@@ -4,6 +4,7 @@ import warnings
 from sklearn.model_selection import train_test_split
 from sklearn.utils.multiclass import unique_labels
 from scipy.io import loadmat
+from sklearn import metrics
 
 from visualization_block import visualization_block 
 
@@ -62,26 +63,25 @@ class LossHistory(Callback):
         self.val_acc.append(logs.get('val_acc'))
 
 # Prepare Data
-x = loadmat('data/ook_10p_0cm.mat')['data_10p_0cm'].T
-y = loadmat('data/ook_10p_label.mat')['org_label'][0]
-classes = len(unique_labels(y))
+x = loadmat('data/128qam_10p_0cm.mat')['data_10p_0cm'].T
+y = loadmat('data/128qam_10p_label.mat')['org_label'][0]
 print("Original Data: {}".format(x.shape))
 print("Original Labels: {}".format(y.shape))
+classes = len(unique_labels(y))
 
 # Split Data
-x_train, x_test, y_train, y_test = train_test_split(x, to_categorical(y, num_classes=None), test_size=0.30, random_state=42)
-x_train, x_validation, y_train, y_validation = train_test_split(x_train, y_train, test_size=0.30, random_state=42)
-print("Train: {}, Test: {}, Validation: {}".format(y_train.shape, y_test.shape, y_validation.shape))
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.30, random_state=42)
+print("Train: {}, Test: {}".format(y_train.shape, y_test.shape))
 
 # Parameters
-nb_epoch = 1
-batch_size = 50
+nb_epoch = 20
+batch_size = 128
 early_stopping = EarlyStopping(monitor='val_loss', verbose=1, mode='auto')
 history = LossHistory()
 
 # Generators
-train_gen = ImageGenerator(x_train, y_train, batch_size)
-test_gen = ImageGenerator(x_test, y_test, batch_size)
+train_gen = ImageGenerator(x_train, to_categorical(y_train), batch_size)
+test_gen = ImageGenerator(x_test, to_categorical(y_test), batch_size)
 
 # Train
 model = cnn(classes)
@@ -89,5 +89,8 @@ model.fit(train_gen, epochs=nb_epoch, verbose=1, shuffle=True, callbacks=[histor
 print(model.summary())
 
 # Predict
-predictions = model.predict_generator(test_gen)
-print(predictions)
+y_pred = np.argmax(model.predict_generator(test_gen), axis=1)
+
+# Evaluation
+print("classification Report:\n%s\n" % (
+    metrics.classification_report(y_test, y_pred)))
