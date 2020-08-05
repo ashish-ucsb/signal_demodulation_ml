@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import warnings
+import optparse
 from sklearn.model_selection import train_test_split
 from sklearn.utils.multiclass import unique_labels
 from scipy.io import loadmat
@@ -17,6 +18,7 @@ from keras.utils import Sequence
 
 # Ignore Warnings
 warnings.simplefilter("ignore", UserWarning)
+warnings.simplefilter("ignore", RuntimeWarning)
 
 # Custom ImageGenerator
 class ImageGenerator(Sequence):
@@ -62,9 +64,22 @@ class LossHistory(Callback):
         self.acc.append(logs.get('acc'))
         self.val_acc.append(logs.get('val_acc'))
 
+# Parse file locations entered in console
+# Usage: python cnn.py -x /normalized_data/QPSK/10/0cm.mat -y /normalized_data/QPSK/10/label.mat
+parser = optparse.OptionParser()
+parser.add_option('-x', '--xfile', action="store", dest="xfile", help="[.mat] signals file")
+parser.add_option('-y', '--yfile', action="store", dest="yfile", help="[.mat] labels file")
+options, args = parser.parse_args()
+*_, a, b = options.xfile.split('/')
+b, _ = b.split('.')
+x = loadmat(options.xfile)['data_{}p_{}'.format(a, b)].T
+y = loadmat(options.yfile)['org_label'][0]
+
+# Sample Data
+# x = loadmat('data/128qam_10p_0cm.mat')['data_10p_0cm'].T
+# y = loadmat('data/128qam_10p_label.mat')['org_label'][0]
+
 # Prepare Data
-x = loadmat('data/128qam_10p_0cm.mat')['data_10p_0cm'].T
-y = loadmat('data/128qam_10p_label.mat')['org_label'][0]
 print("Original Data: {}".format(x.shape))
 print("Original Labels: {}".format(y.shape))
 classes = len(unique_labels(y))
